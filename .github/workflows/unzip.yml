@@ -1,0 +1,40 @@
+name: Unzip NFT Images
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  uncompress:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Create Images Directory
+        run: mkdir -p images
+
+      - name: Unzip All Parts
+        run: |
+          for file in part*.zip; do
+            if [ -f "$file" ]; then
+              echo "Extracting $file..."
+              unzip -o "$file" -d images/
+            fi
+          done
+
+      - name: Clean Up Zip Files
+        run: rm -f part*.zip
+
+      - name: Commit and Push Extracted Images
+        run: |
+          git config --global user.name "bytepunks"
+          git config --global user.email "bytepunks@users.noreply.github.com"
+          git add images/
+          git commit -m "Extract and deploy NFT images" || exit 0
+          git push origin main
