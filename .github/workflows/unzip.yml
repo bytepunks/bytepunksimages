@@ -1,4 +1,4 @@
-name: Unzip NFT Images
+name: Unzip and Flatten NFT Images
 
 on:
   push:
@@ -16,25 +16,33 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Create Images Directory
-        run: mkdir -p images
+      - name: Create Temporary and Main Directories
+        run: |
+          mkdir -p temp_extracted
+          mkdir -p images
 
-      - name: Unzip All Parts
+      - name: Unzip All Parts to Temporary Directory
         run: |
           for file in part*.zip; do
             if [ -f "$file" ]; then
               echo "Extracting $file..."
-              unzip -o "$file" -d images/
+              unzip -o "$file" -d temp_extracted/
             fi
           done
 
-      - name: Clean Up Zip Files
-        run: rm -f part*.zip
+      - name: Move All Images to Main Images Directory
+        run: |
+          find temp_extracted/ -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) -exec mv {} images/ \;
+
+      - name: Clean Up Zip and Temporary Files
+        run: |
+          rm -f part*.zip
+          rm -rf temp_extracted/
 
       - name: Commit and Push Extracted Images
         run: |
           git config --global user.name "bytepunks"
           git config --global user.email "bytepunks@users.noreply.github.com"
           git add images/
-          git commit -m "Extract and deploy NFT images" || exit 0
+          git commit -m "Flatten and extract all NFT images into single folder" || exit 0
           git push origin main
